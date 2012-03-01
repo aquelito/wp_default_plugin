@@ -14,6 +14,8 @@ add_action('init', array('wp_default_plugin', 'init'));
 
 class wp_default_plugin{
 	
+	const LANG = 'wp_default_plugin_lang';
+		
 	/**
 	 * 
 	 * The main 'loader'
@@ -21,7 +23,7 @@ class wp_default_plugin{
 	function init() {
 
 		//Setup the translation
-		load_plugin_textdomain('wp_default_plugin',false, dirname(plugin_basename( __FILE__ ) ) . '/lang/');
+		load_plugin_textdomain(self::LANG,false, dirname(plugin_basename( __FILE__ ) ) . '/lang/');
 		
     	// admin actions and hooks
         if (is_admin()) {
@@ -40,13 +42,13 @@ class wp_default_plugin{
     	add_filter('cron_schedules', array('wp_default_plugin','custom_cron_schedules'));
     	
     	//Javascript
-    	/* /
+    	/*
     	wp_enqueue_script('jquery-ui-datepicker', self::get_plugin_url() . '/js/jquery.ui.datepicker.min.js', array('jquery', 'jquery-ui-core') );
 		wp_enqueue_script('twitterfavs-admin-js', self::get_plugin_url() . '/js/admin.js', array('jquery-ui-datepicker') );
 		
 		//Smoothness style
 		wp_enqueue_style('jquery.ui.smoothness', self::get_plugin_url() . '/css/smoothness/jquery-ui-1.8.17.custom.css');
-		/* */
+		*/
     	
     }
     
@@ -55,59 +57,67 @@ class wp_default_plugin{
      * Set up the admin menu(s)
      */
     public static function admin_menu(){
-    	add_options_page("Default plugin admin page", "Default plugin", 'manage_options', 'wp_default_plugin_settings', array('wp_default_plugin', "admin_settings"));
+    	add_options_page("Default plugin admin page", __("Default plugin", self::LANG), 'manage_options', 'wp_default_plugin_settings', array('wp_default_plugin', "admin_settings"));
     }
     
+	
+    /**
+     * 
+     * Save option
+     */
+	public static function admin_setting_update() {
+	    $updated = false;
+        if (isset($_POST['plugin_ok'])) {
+	        self::update_option('my_plugin_option', $_POST['my_plugin_option']);
+	        $updated = true;
+	    }
+	
+	    if ($updated) {
+	        echo '<div id="message" class="updated fade">';
+	        echo '<p>'.__('Settings successfully updated.', self::LANG).'</p>';
+	        echo '</div>';
+	    } else {
+	        echo '<div id="message" class="error fade">';
+	        echo '<p>'.__('Unable to update settings.', self::LANG).'</p>';
+	        echo '</div>';
+	    }
+	}
     /**
      * 
      * The admin settings page
      */
     public static function admin_settings(){
    		if (!current_user_can('manage_options'))  {
-			wp_die( __('You do not have sufficient permissions to access this page.') );
+			wp_die( __('You do not have sufficient permissions to access this page.',self::LANG) );
 		}
 		?>
 		<div class="wrap">
-    		<div id="icon-options-general" class="icon32">
-				<br />
-			</div>
-    		<h2>Default plugin</h2>
-    		
-    		<?php if (isset($_POST)) :
-
-	        	//Let's save some options ...
-	        
-	            ?>
-	            <div id="setting-error-settings_updated" class="updated settings-error">
-					<p>
-						<strong><?php _e('Settings saved.')?></strong>
-					</p>
-				</div>
-	            
-			<?php endif;?>
-    		
-    		
-    		<form action="">
+    		<div id="icon-options-general" class="icon32"></div>
+    		<h2><?php _e('Default plugin',self::LANG); ?></h2>
+    		<?php if (isset($_POST['plugin_ok'])) {
+              	self::admin_setting_update(); // update setting
+	        //Let's save some options ...
+		} ?>
+                
+    		<form action="" method="post">
 	    		<table class="form-table">
 					<tbody>
 						<tr valign="top">
 							<th scope="row">
-								<label for=""><?php _e('A label') ?></label><br />
-								<em><?php _e('In case you want some options ...')?></em>
+								<label for="my_plugin_option"><?php _e('A label',self::LANG) ?></label><br />
+								<em><?php _e('In case you want some options ...',self::LANG)?></em>
 							</th>
 							<td>
-								<input type="text" name="" id="" value="blablabla" />
+								<input type="text" name="my_plugin_option" id="my_plugin_option" value="<?php esc_attr_e( self::get_option('my_plugin_option' )); ?>" />
 							</td>
 						</tr>
 					</tbody>
 				</table>
-			</form>
-    		
     		<p class="submit">
-            	<input class="button-primary" name="plugin_ok" value="<?php _e('Save settings') ?>" type="submit" />
-            </p>
-    		
-    	</div>
+            	<input type="submit" class="button-primary" name="plugin_ok" value="<?php esc_attr_e('Save settings',self::LANG) ?>" />
+            	</p>
+            	</form>
+            	</div>
     		
     	<?php 
     }
@@ -164,7 +174,7 @@ class wp_default_plugin{
 		//10 minutes, mainly for tests
 		$schedules['10min'] = array(
 			'interval'   => 60*10,// in seconds
-			'display'   => __('Every 10 minutes'), 
+			'display'   => __('Every 10 minutes',self::LANG), 
 		);
 		
 		return $schedules;
